@@ -1,0 +1,163 @@
+---
+title: Trabajo Final Rstudio
+author: Karla E. Rojas Vélez
+output:
+  html_document:
+    theme: united
+    highlight: textmate
+    
+---
+
+<style>
+body{
+"text-align: justify}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Impuesto al valor agregado (IVA) en el mundo {.tabset .tabset-fade}
+
+El **Impuesto al valor agregado** o **IVA**, es un impuesto que los países graban al consumo doméstico final de productos y servicios. Se lo presenta como un incremento porcentual al valor final del producto o servicio. Este impuesto es muy importante para el desarrollo del país, ya que, si logras manejar la recaudación, gestionarás una mejora significativa tanto para el gobierno, las empresas y los ciudadanos.
+
+La gran mayoria de los países registran este impuesto, **datos macro**, es una base de datos que registra los valores históricos del porcentaje gravado por cada país (2008 - 2018). Cabe recalcar que ciertos países analizados tiene IVA 0% o no tiene datos.
+
+```{r tabla, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(rvest)
+library(reshape2)
+library(DT)
+library(highcharter)
+library(dplyr)
+library(tidyverse)
+library(plyr)
+library(RColorBrewer)
+library(plotly)
+
+##################################
+#####   tabla IVA          #######
+##################################
+
+##Carga de las tablas de los 11 diferentes años: 
+
+year <- c("2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018")
+
+#loop para poder extraer el URL de cada año: 
+
+tmp <- list()
+j=1
+
+for (i in year) {
+  url <- paste("https://datosmacro.expansion.com/impuestos/iva?anio",i, sep = "=")
+  tmp[j]= url
+  j=j+1
+}
+
+
+#loop para poder extraer las tablas de cada año: 
+
+tmp2 <- data.frame()
+tmp3 <- list()
+
+for (i in 1:length(tmp)){
+  x <- paste(tmp[i])
+  x <- read_html(x, encoding = "UTF-8") %>%
+    html_nodes("table") 
+  x <- html_table(x[[1]], fill = T)
+  names(x) <- NULL
+  tmp2 = x
+  tmp2$anio <- i
+  tmp3[[i]]= tmp2
+}
+
+#union de cada tabla en un data frame:
+
+iva <- rbind(tmp3[[1]], tmp3[[2]], tmp3[[3]], tmp3[[4]], tmp3[[5]], 
+      tmp3[[6]], tmp3[[7]], tmp3[[8]], tmp3[[9]], tmp3[[10]], tmp3[[11]])
+
+#limpieza de tabla: 
+
+iva[, 6] <- NULL
+
+colnames(iva) <- c("Paises", "Fecha", "IVA reducido", "IVA general", "IVA", "Var.", "anio")
+iva$Paises <- gsub(" $", "", gsub("\\[[+]]", "", iva[,1]))
+iva$Fecha <- as.Date(iva$Fecha, "%d/%m/%Y")
+iva.tabla <- iva[, c(1:2, 5, 7)]
+iva$IVA <- gsub(",", ".",gsub("%$", "", iva[,5]))%>%
+  as.numeric() %>%
+  round( digits = 0)
+iva <- iva[, c(1:2, 5, 7)]
+
+#diccionario de años:
+
+anio <- c(1:11)
+dic <- cbind(year, anio)
+
+#union diccionario vs tabla de IVA: 
+
+iva <- merge(iva, dic, by= "anio", all = T)
+iva <- iva[,c(2, 4:5)]
+
+iva.media <- ddply(iva, .(Paises), summarize, media = mean(IVA))
+iva.media$media <- round(iva.media$media, digits = 0)
+
+
+#cambio formato de tabla IVA: 
+
+iva.largo <- dcast(iva, Paises ~ year, value.var = "IVA")
+
+#####################################
+#####      mapa gráfico       #######
+#####################################
+
+#carga tabla de validación de paises con formato ISO: 
+
+pais <- data.frame(read.csv("pais.csv", sep= ";", encoding = "UTF-8", header = T))
+
+#union de base IVA con tabla de paises:
+
+iva.media<-merge(iva.media, pais, by.x = "Paises", by.y = "pais", all.x=T )
+iva.media<-iva.media[, 1:3]
+
+mapdata <- get_data_from_map(download_map_data("custom/world-robinson"))
+
+map <- merge(iva.media, mapdata, by.x = "alfa.3", by.y = "iso-a3", all.x=T )
+
+map <- as_tibble(map)
+
+#mapa gráfico:
+
+mapas <- map %>%
+  select(pais =`hc-a2`) %>% 
+  mutate(X=map$media)
+
+
+hcmap("custom/world-robinson", data = mapas, value = "X",
+      joinBy = c("hc-a2", "pais"), name = "IVA",
+      dataLabels = list(enabled = TRUE, format = '{point.name}'),
+      borderColor = "#FAFAFA", borderWidth = 0.5,
+      tooltip = list(valueDecimals = 0, valueSuffix = "%")) %>%
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_colorAxis(minColor = "#CCCCCC", maxColor = "#009999")%>%
+  hc_title(text = "Mapa dinámico IVA Países (media de 2008 - 2018)",
+           align = "center", style = list(color = "#000000", fontWeight = "bold"))
+
+```
+
+&nbsp;
+<hr />
+<p style="text-align: center;">A work by <a href="https://github.com/Krojasvelez92">Karla Rojas V.</a></p>
+<p style="text-align: center;"><span style="color: #638;"><em>karlarojasvelez92@gmail.com</em></span></p>
+
+<!-- Add icon library -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<!-- Add font awesome icons -->
+<p style="text-align: center;">
+    <a href="https://www.linkedin.com/in/karla-e-rojas-v%C3%A9lez-business-analyst-and-big-data-0b786199/" class="fa fa-linkedin"></a>
+    <a href="https://github.com/Krojasvelez92" class="fa fa-github"></a>
+</p>
+
+&nbsp;
