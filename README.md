@@ -18,4 +18,24 @@ packages <- c(
 
 install.packages(packages)
 ```
+EL paquete highcharter es un paquete de Rstudio para crear gráficos dinámicos, dentro de estos gráficos existen algunos ejemplos de mapas:
+http://jkunst.com/highcharter/index.html
 
+Por otro lado https://code.highcharts.com/mapdata/ nos muestra la colección de mapas que existen dentro del repositorio en distintos formatos.
+
+```
+mapas <- map %>%
+  select(pais =`hc-a2`) %>% 
+  mutate(X=map$media)
+
+
+hcmap("custom/world-robinson", data = mapas, value = "X",
+      joinBy = c("hc-a2", "pais"), name = "IVA",
+      dataLabels = list(enabled = TRUE, format = '{point.name}'),
+      borderColor = "#FAFAFA", borderWidth = 0.5,
+      tooltip = list(valueDecimals = 0, valueSuffix = "%")) %>%
+  hc_mapNavigation(enabled = TRUE) %>%
+  hc_colorAxis(minColor = "#CCCCCC", maxColor = "#009999")%>%
+  hc_title(text = "Mapa dinámico IVA Países (media de 2008 - 2018)",
+           align = "center", style = list(color = "#000000", fontWeight = "bold"))
+ ```
