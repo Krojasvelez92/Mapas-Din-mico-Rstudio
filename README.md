@@ -21,7 +21,9 @@ install.packages(packages)
 EL paquete highcharter es un paquete de Rstudio para crear gráficos dinámicos, dentro de estos gráficos existen algunos ejemplos de mapas:
 http://jkunst.com/highcharter/index.html
 
-Por otro lado https://code.highcharts.com/mapdata/ nos muestra la colección de mapas que existen dentro del repositorio en distintos formatos.
+Por otro lado https://code.highcharts.com/mapdata/ nos muestra la colección de mapas que existen dentro del repositorio en distintos formatos, en base a estos mapas podemos crear mapas dinámicos.
+
+Al llamar a la función hcmap "custom/world-robinson", deber incluir la ruta del mapa que quieres extraer de la página web. 
 
 ```
 mapas <- map %>%
